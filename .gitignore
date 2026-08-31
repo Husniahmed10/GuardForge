@@ -1,3 +1,4 @@
 RESOURCES
 .env
-.logfire
+.logfire 
+.vscode
