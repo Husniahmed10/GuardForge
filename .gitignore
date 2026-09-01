@@ -1,4 +1,6 @@
 RESOURCES
 .env
 .logfire 
-.vscode
+.vscode 
+__pycache__ 
+.deepeval
