@@ -1,4 +1,5 @@
 RESOURCES
 .env
 .logfire 
-.vscode
+.vscode 
+__pycache__
