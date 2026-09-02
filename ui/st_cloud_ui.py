@@ -38,7 +38,7 @@ with st.sidebar:
     st.title("🧠 Agent OS")
     st.markdown("---")
 
-    base_url = "https://rag-api-320432910529.us-central1.run.app"
+    base_url = "https://rag-api-465271695995.us-central1.run.app"
 
     st.markdown("---")
     st.success(f"Logfire: {LOGFIRE_STATUS}")
