@@ -19,9 +19,6 @@ gcloud config list
 
 # List all enabled APIs in this project
 gcloud services list --enabled
-
-# List all VPC connectors in a region
-gcloud compute networks vpc-access connectors list --region us-central1
 ```
 
 ---
@@ -91,11 +88,6 @@ gcloud projects add-iam-policy-binding dmtxpress \
     --member="serviceAccount:173472321372-compute@developer.gserviceaccount.com" \
     --role="roles/documentai.apiUser"
 
-# Grant VPC access to the Cloud Run Service Agent
-gcloud projects add-iam-policy-binding dmtxpress \
-    --member="serviceAccount:service-173472321372@serverless-robot-prod.iam.gserviceaccount.com" \
-    --role="roles/vpcaccess.user"
-
 # Grant permission to the Cloud Run Service Account (Production)
 gcloud projects add-iam-policy-binding dmtxpress \
     --member="serviceAccount:173472321372-compute@developer.gserviceaccount.com" \
@@ -127,7 +119,6 @@ GCP_DOC_AI_LOCATION="us"
 GCP_DOC_AI_PROCESSOR_ID="84a32765cefbb395"
 GCP_RAW_BUCKET="dmtxpress-rag-raw"
 GCP_PROCESSED_BUCKET="dmtxpress-rag-processed"
-VPC_CONNECTOR="rag-vps"
 
 QDRANT_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIiwic3ViamVjdCI6ImFwaS1rZXk6ZjQxNWQ0NzktMmQ5Yy00MzJhLWE3NzUtZDYxMDcyZjgxMTU2In0.J1dtl1shJEuvfyJUf3w-J9mNvyxPOGhXQEa7qPK8fZM"
 QDRANT_CLUSTER_ENDPOINT="https://03dc70a2-3350-4564-9123-c40cf1abb317.us-east4-0.gcp.cloud.qdrant.io"
@@ -194,19 +185,7 @@ gcloud artifacts repositories create rag-repo \
 ### Build and Push using Cloud Build
 ```powershell
 # Submit a build to Google Cloud Build (this builds the image in the cloud and pushes it)
-gcloud builds submit --tag us-central1-docker.pkg.dev/dmtxpress/rag-repo/rag-api:v1 .
-```
-
-### 6. Create a vpc connector:
-
-Note that underscores (_) are not allowed in VPC connector names. You must use a hyphen (-) instead.
-
-```
-gcloud compute networks vpc-access connectors create rag-vps \
-    --region us-central1 \
-    --network default \
-    --range 10.8.0.0/28
-
+gcloud builds submit --tag us-central1-docker.pkg.dev/guardforge/rag-repo/rag-api:v1 .
 ```
 
 ---
@@ -215,30 +194,29 @@ gcloud compute networks vpc-access connectors create rag-vps \
 Deploy the containerized app to Google Cloud Run.
 
 ```powershell
-
 gcloud run deploy rag-api \
-  --image us-central1-docker.pkg.dev/dmtxpress/rag-repo/rag-api:v1 \
+  --image us-central1-docker.pkg.dev/guardforge/rag-repo/rag-api:v1 \
   --region us-central1 \
   --platform managed \
   --allow-unauthenticated \
   --memory 2Gi \
   --timeout=300 \
-  --vpc-connector rag-vps \
-  --set-env-vars "PROJECT_ID=dmtxpress" \
+  --set-env-vars "PROJECT_ID=guardforge" \
   --set-env-vars "LOCATION=us-central1" \
-  --set-env-vars "GCP_DOC_AI_PROCESSOR_ID=84a32765cefbb395" \
-  --set-env-vars "GCP_RAW_BUCKET=dmtxpress-rag-raw" \
-  --set-env-vars "GCP_PROCESSED_BUCKET=dmtxpress-rag-processed" \
-  --set-env-vars "QDRANT_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIiwic3ViamVjdCI6ImFwaS1rZXk6ZjQxNWQ0NzktMmQ5Yy00MzJhLWE3NzUtZDYxMDcyZjgxMTU2In0.J1dtl1shJEuvfyJUf3w-J9mNvyxPOGhXQEa7qPK8fZM" \
-  --set-env-vars "QDRANT_CLUSTER_ENDPOINT=https://03dc70a2-3350-4564-9123-c40cf1abb317.us-east4-0.gcp.cloud.qdrant.io" \
-  --set-env-vars "GROQ_API_KEY=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" \
-  --set-env-vars "LOGFIRE_TOKEN=pylf_v1_us_cY9lmqCkJX2PXKdsJd8Lbpw5H5gMPGqSGbxs1C8qZ9XF" \
+  --set-env-vars "GCP_DOC_AI_LOCATION=us" \
+  --set-env-vars "GCP_DOC_AI_PROCESSOR_ID=58b66f3486419984" \
+  --set-env-vars "GCP_RAW_BUCKET=guardforge-rag-raw" \
+  --set-env-vars "GCP_PROCESSED_BUCKET=guardforge-rag-processed" \
+  --set-env-vars "QDRANT_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIiwic3ViamVjdCI6ImFwaS1rZXk6MjI2NmEyMWUtODFmNy00MjdiLTg2NTgtNjY3OGE5N2EyZjFmIn0.WhM6DbkqyX5WxfYebdWN_f6wspgPWyHf_8gUhACg4JI" \
+  --set-env-vars "QDRANT_CLUSTER_ENDPOINT=https://b7ab299e-4878-4529-8052-8a1c932d2959.us-east4-0.gcp.cloud.qdrant.io" \
+  --set-env-vars "GROQ_API_KEY=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" \
+  --set-env-vars "OPENAI_FALLBACK_API_KEY=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" \
+  --set-env-vars "PORTKEY_API_KEY=zUz4oZl3gyl6vJuCVFmAHqaLHqhW" \
+  --set-env-vars "LOGFIRE_TOKEN=pylf_v1_us_X1Gd45fPy7lN7SXJgL8thB6GcsWpkFcmw2cC2ydfcFvX" \
   --set-env-vars "LANGSMITH_TRACING=true" \
-  --set-env-vars "LANGSMITH_PROJECT=entreprise_rag" \
-  --set-env-vars "LANGSMITH_API_KEY=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" \
-  --set-env-vars "LANGSMITH_ENDPOINT=https://api.smith.langchain.com"
-
-
+  --set-env-vars "LANGSMITH_PROJECT=GuardForge" \
+  --set-env-vars "LANGSMITH_API_KEY=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" \
+  --set-env-vars "LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com"
 ```
 
 ---
