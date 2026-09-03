@@ -5,48 +5,31 @@ from langchain_openai import ChatOpenAI
 from app.config import settings
 
 
-# Production gateway config:
-#   - Fallback: primary @rag/llama-3.3-70b-versatile → @brag/openai/gpt-oss-120b on failure
-#   - Cache: semantic mode (requires Portkey Enterprise — silently falls back to simple on free/starter)
-#   - Retry: 2 attempts on rate limit / server error before triggering the fallback target
-GATEWAY_CONFIG = {
-    "strategy": {"mode": "fallback"},
-    "cache": {"mode": "simple"},
-    "retry": {
-        "attempts": 2,
-        "on_status_codes": [429, 503]
-    },
-    "targets": [
-        {"override_params": {"model": f"@{settings.GROQ_SLUG}/llama-3.3-70b-versatile"}},
-        {"override_params": {"model": f"@{settings.GROQ_SLUG_2}/openai/gpt-oss-120b"}},
-    ]
-}
+# Saved Portkey config: fallback (rag→brag) + simple cache + retry
+# Manage at: https://app.portkey.ai → Configs → pc-guardf-83fb2f
+PORTKEY_CONFIG_SLUG = "pc-guardf-83fb2f"
 
 portkey_client = Portkey(
     api_key=settings.PORTKEY_API_KEY,
-    config=GATEWAY_CONFIG
+    config=PORTKEY_CONFIG_SLUG
 )
 
 
 def get_langchain_llm(feature: str = "rag") -> ChatOpenAI:
     """
     Returns a Portkey-backed ChatOpenAI — a drop-in for ChatGroq in LangChain nodes.
-
-    Why ChatOpenAI and not ChatGroq:
-      Portkey is a proxy. It exposes an OpenAI-compatible endpoint at PORTKEY_GATEWAY_URL.
-      ChatGroq is hardwired to Groq's API and does not support routing through a proxy.
-      ChatOpenAI supports base_url (points at Portkey) and default_headers (passes Portkey
-      auth + config). The @rag/model-name format is Portkey-specific — Groq's own client
-      does not understand it. You are still using Groq models; Portkey is just in the middle.
+    Routes via saved Portkey config (pc-guardf-83fb2f):
+      Primary:  rag  → openai/gpt-oss-120b (Groq)
+      Fallback: brag → gpt-4o-mini (OpenAI)
     """
     return ChatOpenAI(
         api_key=settings.PORTKEY_API_KEY,
         base_url=PORTKEY_GATEWAY_URL,
-        model=f"@{settings.GROQ_SLUG}/llama-3.3-70b-versatile",
+        model="openai/gpt-oss-120b",
         temperature=0,
         default_headers=createHeaders(
             api_key=settings.PORTKEY_API_KEY,
-            config=GATEWAY_CONFIG,
+            config=PORTKEY_CONFIG_SLUG,
             metadata={
                 "feature": feature,
                 "_user": "rag-system",
