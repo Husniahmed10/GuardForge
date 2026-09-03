@@ -18,15 +18,14 @@ class Settings:
     QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
     QDRANT_COLLECTION = "guardforge"
 
-    # --- REASONING ENGINE (GROQ) ---
     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-    GROQ_MODEL = "openai/gpt-oss-120b"
+    OPENAI_MODEL = "openai/gpt-oss-120b"
     OPENAI_FALLBACK_API_KEY = os.getenv("OPENAI_FALLBACK_API_KEY")
 
     # --- LLM GATEWAY (PORTKEY) ---
     PORTKEY_API_KEY = os.getenv("PORTKEY_API_KEY")
-    GROQ_SLUG =  "rag"     # primary: @rag/llama-3.3-70b-versatile
-    GROQ_SLUG_2 = "brag"  # fallback: @brag/openai/gpt-oss-120b
+    GROQ_SLUG =  "rag"     # primary: @rag/openai/gpt-oss-120b
+    GROQ_SLUG_2 = "brag"  # fallback: OpenAI virtual key → gpt-4o-mini
 
     
     # --- OBSERVABILITY ---
